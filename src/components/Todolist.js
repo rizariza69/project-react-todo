@@ -19,15 +19,15 @@ const createdTodos = todo => {
   );
 };
 
-//API Updates connect server
-// const updatesTodos = id => {
-//   return axios.put(
-//     `https://us-central1-coba-23d3c.cloudfunctions.net/v1/todos/?id=${id}`,
-//     {
-//       // content:
-//     }
-//   );
-// };
+// API Updates connect server
+const updatesTodos = (id, content) => {
+  return axios.put(
+    `https://us-central1-coba-23d3c.cloudfunctions.net/v1/todos/?id=${id}`,
+    {
+      content
+    }
+  );
+};
 
 //API delete todos connect server use ?id={id}
 const deleteTodos = id => {
@@ -39,9 +39,11 @@ const deleteTodos = id => {
 export class Todo extends React.Component {
   state = {
     todos: [],
-    value: "tidur",
+    value: "",
     showAll: false,
-    modal: false
+    modal: false,
+    isUpdate: false,
+    id: ""
   };
 
   getTodoList = () => {
@@ -54,6 +56,7 @@ export class Todo extends React.Component {
   };
 
   componentDidMount() {
+    //ambil data dari getTodoList, maka menggunakan this.
     this.getTodoList();
   }
 
@@ -62,30 +65,44 @@ export class Todo extends React.Component {
   };
 
   handleSubmit = () => {
-    //create todo
-    createdTodos(this.state.value).then(() => {
-      this.setState({
-        //clear input
-        value: ""
+    if (this.state.isUpdate) {
+      updatesTodos(this.state.id, this.state.value).then(() => {
+        alert("Sukses Bos");
+
+        this.setState({
+          value: "",
+          isUpdate: false
+        });
+
+        this.getTodoList();
       });
-      //show todo from create and connect to server
-      this.getTodoList();
+    } else {
+      createdTodos(this.state.value).then(() => {
+        this.setState({
+          value: ""
+        });
+
+        this.getTodoList();
+      });
+    }
+  };
+
+  handleUpdate = index => {
+    const selected = this.state.todos[index];
+    this.setState({
+      value: selected.content,
+      isUpdate: true,
+      id: selected.id
     });
   };
 
-  //foe delete handle
+  //for delete handle
   handleDelete = id => {
     deleteTodos(id).then(() => {
       //after that prnt get all a todo list
       this.getTodoList();
     });
   };
-
-  toggle() {
-    this.setState(prevState => ({
-      modal: !prevState.modal
-    }));
-  }
 
   render() {
     return (
@@ -95,16 +112,18 @@ export class Todo extends React.Component {
           value={this.state.value}
           onChange={this.handleChange}
         />
-        <input type="submit" onClick={this.handleSubmit} />
+        <button onClick={this.handleSubmit}>
+          {this.state.isUpdate ? "Update" : "Submit"}
+        </button>
 
         <div>
           <u>
             {this.state.todos.map((item, index) => {
               return (
-                <li key="item.id">
+                <li key={item.id}>
                   {index + 1}. {item.content}
-                  <button color="success" onClick={this.toggle}>
-                    {this.props.buttonLabel}>UPDATE
+                  <button onClick={() => this.handleUpdate(index)}>
+                    UPDATE
                   </button>{" "}
                   |
                   <button
